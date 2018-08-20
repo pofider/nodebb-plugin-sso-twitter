@@ -61,7 +61,8 @@
 					consumerKey: settings['key'],
 					consumerSecret: settings['secret'],
 					callbackURL: nconf.get('url') + '/auth/twitter/callback',
-					passReqToCallback: true
+					passReqToCallback: true,
+					includeEmail: true
 				}, function (req, token, tokenSecret, profile, done) {
 					if (req.hasOwnProperty('user') && req.user.hasOwnProperty('uid') && req.user.uid > 0) {
 						// Save twitter-specific information to the user
@@ -70,7 +71,9 @@
 						return done(null, req.user);
 					}
 
-					Twitter.login(profile.id, profile.username, profile.photos, function (err, user) {
+					const email = (profile.emails && profile.emails.length > 0) ? profile.emails[0].value : null
+					
+					Twitter.login(profile.id, profile.username, email, profile.photos, function (err, user) {
 						if (err) {
 							return done(err);
 						}
@@ -126,7 +129,7 @@
 		})
 	};
 
-	Twitter.login = function (twid, handle, photos, callback) {
+	Twitter.login = function (twid, handle, email, photos, callback) {
 		Twitter.getUidByTwitterId(twid, function (err, uid) {
 			if (err) {
 				return callback(err);
@@ -144,7 +147,7 @@
 				}
 
 				// New User
-				user.create({username: handle}, function (err, uid) {
+				user.create({username: handle, email }, function (err, uid) {
 					if (err) {
 						return callback(err);
 					}
